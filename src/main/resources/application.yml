@@ -1,0 +1,6 @@
+spring:
+  application:
+    name: restclient-demo-application
+
+server:
+  port: 8090
