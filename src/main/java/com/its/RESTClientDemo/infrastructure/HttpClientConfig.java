@@ -1,26 +1,22 @@
 package com.its.RESTClientDemo.infrastructure;
 
+import com.its.RESTClientDemo.infrastructure.ssl.HttpClientSslHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.ConnectionKeepAliveStrategy;
-import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.apache.http.conn.ssl.TrustAllStrategy;
-import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultConnectionKeepAliveStrategy;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.pool.PoolStats;
 import org.apache.http.protocol.HttpContext;
-import org.apache.http.ssl.SSLContextBuilder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,10 +24,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 
 import java.io.IOException;
-import java.security.KeyManagementException;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 @Configuration
@@ -40,7 +32,7 @@ import java.util.concurrent.TimeUnit;
 @EnableScheduling
 public class HttpClientConfig {
 
-    //private final SslConfigurationHelper sslConfigurationHelper;
+    private final HttpClientSslHelper httpClientSslHelper;
 
     @Value("${http.client.connection.timeout:15000}")
     private static final Integer CONNECTION_TIMEOUT = 15000;
@@ -84,6 +76,8 @@ public class HttpClientConfig {
                             .setDefaultRequestConfig(prepareHttpClientRequestConfig())
                             .setConnectionManager(poolingConnectionManager())
                             .setKeepAliveStrategy(connectionKeepAliveStrategy())
+                            // got rid of  java.lang.IllegalStateException: Connection pool shut down issue
+                            .setConnectionManagerShared(Boolean.TRUE)
                             .disableConnectionState()
                             .disableCookieManagement()
                             .build();
@@ -111,6 +105,7 @@ public class HttpClientConfig {
         return new DefaultConnectionKeepAliveStrategy() {
             @Override
             public long getKeepAliveDuration(final HttpResponse response, final HttpContext context) {
+                log.info("Instantiating DefaultConnectionKeepAliveStrategy by determining keep alive time ");
                 long keepAliveDuration = super.getKeepAliveDuration(response, context);
 
                 if (keepAliveDuration < 0) {
@@ -142,32 +137,9 @@ public class HttpClientConfig {
 
     @Bean
     public PoolingHttpClientConnectionManager poolingConnectionManager() {
-        /*SSLContextBuilder builder = new SSLContextBuilder();
-        try {
-            builder.loadTrustMaterial(null, new TrustAllStrategy());
-        } catch (NoSuchAlgorithmException | KeyStoreException e) {
-            log.error("Pooling Connection Manager Initialisation failure because of " + e.getMessage(), e);
-        }
-
-        SSLConnectionSocketFactory sslsf = null;
-        try {
-            sslsf = new SSLConnectionSocketFactory(builder.build());
-        } catch (KeyManagementException | NoSuchAlgorithmException e) {
-            log.error("Pooling Connection Manager Initialisation failure because of " + e.getMessage(), e);
-        }
-
-        Registry<ConnectionSocketFactory> registry = RegistryBuilder
-                                                        .<ConnectionSocketFactory>create()
-                                                        .register("https", sslsf)
-                                                        .register("http",
-                                                                new PlainConnectionSocketFactory())
-                                                        .build();
 
         PoolingHttpClientConnectionManager poolingConnectionManager =
-                new PoolingHttpClientConnectionManager(socketFactoryRegistry);*/
-
-        PoolingHttpClientConnectionManager poolingConnectionManager =
-                new PoolingHttpClientConnectionManager();
+            new PoolingHttpClientConnectionManager(getConnectionSocketFactoryRegistry());
         poolingConnectionManager.setMaxTotal(MAX_CONNECTIONS);
         poolingConnectionManager.setDefaultMaxPerRoute(MAX_PER_ROUTE_CONNECTION);
         poolingConnectionManager.setValidateAfterInactivity(VALIDATE_AFTER_INACTIVITY_IN_MILLIS);
@@ -230,21 +202,21 @@ public class HttpClientConfig {
                     if (connectionManager != null) {
                         final PoolStats totalPoolStats = connectionManager.getTotalStats();
                         log.info(" ** HTTP Client Connection Pool Stats : Available = {}, Leased = {}, Pending = {}, Max = {} **",
-                            totalPoolStats.getAvailable(), totalPoolStats.getLeased(), totalPoolStats.getPending(), totalPoolStats.getMax());
+                                totalPoolStats.getAvailable(), totalPoolStats.getLeased(), totalPoolStats.getPending(), totalPoolStats.getMax());
 
                         connectionManager
-                            .getRoutes()
-                            .stream()
-                            .forEach(route -> {
-                                final PoolStats routeStats = connectionManager.getStats(route);
-                                buffer
-                                    .append(" ++ HTTP Client Connection Pool Route Pool Stats ++ ")
-                                    .append(" Route : " + route.toString())
-                                    .append(" Available : " + routeStats.getAvailable())
-                                    .append(" Leased : " + routeStats.getLeased())
-                                    .append(" Pending : " + routeStats.getPending())
-                                    .append(" Max : " + routeStats.getMax());
-                            });
+                                .getRoutes()
+                                .stream()
+                                .forEach(route -> {
+                                    final PoolStats routeStats = connectionManager.getStats(route);
+                                    buffer
+                                            .append(" ++ HTTP Client Connection Pool Route Pool Stats ++ ")
+                                            .append(" Route : " + route.toString())
+                                            .append(" Available : " + routeStats.getAvailable())
+                                            .append(" Leased : " + routeStats.getLeased())
+                                            .append(" Pending : " + routeStats.getPending())
+                                            .append(" Max : " + routeStats.getMax());
+                                });
                         log.info(buffer.toString());
                     } else {
                         log.info("Http Client Connection manager has not been initialised");
@@ -255,5 +227,17 @@ public class HttpClientConfig {
                 log.info("Leaving connectionPoolMetricsLogger");
             }
         };
+    }
+
+    private Registry<ConnectionSocketFactory> getConnectionSocketFactoryRegistry() {
+        SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(httpClientSslHelper.getSslContext());
+        Registry<ConnectionSocketFactory> registry = RegistryBuilder
+                                                        .<ConnectionSocketFactory>create()
+                                                        .register("https", sslsf)
+                                                        .register("http",
+                                                                new PlainConnectionSocketFactory())
+                                                        .build();
+
+        return registry;
     }
 }

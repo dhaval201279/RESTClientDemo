@@ -1,10 +1,12 @@
 package com.its.RESTClientDemo.service;
 
 import com.its.RESTClientDemo.entity.CardEntity;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.EnableRetry;
 import org.springframework.retry.annotation.Recover;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
@@ -13,6 +15,7 @@ import org.springframework.web.client.RestTemplate;
 @Service
 @Slf4j
 @RequiredArgsConstructor
+@EnableRetry
 public class CardService {
 
     @Autowired
@@ -25,15 +28,16 @@ public class CardService {
     public CardEntity enroll(CardEntity aCard) {
         log.info("Entering enroll");
         String cardNo = aCard.getCardNumber();
-        log.info("Generating card alias");
         String alias = generateAlias(cardNo);
+        log.info("Alias for card = {} is : {}", cardNo, alias);
         aCard.setAlias(alias);
         log.info("Leaving enroll");
         return aCard;
     }
 
-    @Retryable(value = {Exception.class}, maxAttempts = 3, backoff = @Backoff(delayExpression = "2"))
-    private String generateAlias(String cardNo) {
+    @Retryable(label = "generate-alias-retry-label", value = {Exception.class}, maxAttempts = 3,
+        backoff = @Backoff(delayExpression = "2"))
+    public String generateAlias(String cardNo) {
         log.info("Generating alias for cardNo : {} by invoking downstream system ", cardNo);
         return restTemplate
                 .getForObject(String.format("http://localhost:7080/%s", cardNo), String.class);

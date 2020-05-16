@@ -26,6 +26,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 	implementation 'org.apache.httpcomponents:httpclient'
 	implementation 'org.springframework.retry:spring-retry'
+	implementation 'org.springframework.boot:spring-boot-starter-aop'
 
 	compileOnly 'org.projectlombok:lombok'
 
@@ -33,9 +34,11 @@ dependencies {
 
 	annotationProcessor 'org.projectlombok:lombok'
 
-	testImplementation('org.springframework.boot:spring-boot-starter-test') {
+	/*testImplementation('org.springframework.boot:spring-boot-starter-test') {
 		exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
-	}
+	}*/
+
+	testImplementation('org.springframework.boot:spring-boot-starter-test')
 	testImplementation 'io.projectreactor:reactor-test'
 }
 
