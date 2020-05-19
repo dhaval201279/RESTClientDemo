@@ -24,17 +24,15 @@ import org.springframework.web.client.RestTemplate;
 
 //import org.junit.jupiter.api.Test;
 
-@RunWith(SpringRunner.class)
+//@RunWith(SpringRunner.class)
 //@RunWith(MockitoJUnitRunner.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = RestClientDemoApplication.class)
+//@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = RestClientDemoApplication.class)
 //@ContextConfiguration(classes = {RestTemplateConfig.class, HttpClientConfig.class, UntrustedHttpClientSslHelper.class})
-public class CardServiceTest {
-    /*@InjectMocks
-    @Spy*/
+/*public class CardServiceTest {
+
     @Autowired
     CardService cardService;
 
-    //@Mock
     @Autowired
     RestTemplate mockRestTemplate;
 
@@ -47,7 +45,7 @@ public class CardServiceTest {
     }
 
     @Test
-    public void generateAlias_is_retry_successfull_on_httpclienterrorexception() {
+    public void generateAlias_is_retry_successfull_on_httpclienterrorexception() {*/
         /*Mockito
             .when(mockRestTemplate.getForObject(ArgumentMatchers.eq("http://localhost:7080/%s"),
                 ArgumentMatchers.any().getClass(), (Object) ArgumentMatchers.any()))
@@ -62,7 +60,7 @@ public class CardServiceTest {
                 ArgumentMatchers.any().getClass(), (Object) ArgumentMatchers.any());*/
 
         // new approach
-        CardEntity testCard = CardEntity
+/*        CardEntity testCard = CardEntity
                                 .builder()
                                 .cardNumber("12345678996325741")
                                 .expiryDate("1225")
@@ -82,6 +80,5 @@ public class CardServiceTest {
             .verify();
 
         //Assertions.assertThrows(HttpClientErrorException.class, () -> cardService.enroll(testCard));
-        //Assertions.assert
     }
-}
+}*/

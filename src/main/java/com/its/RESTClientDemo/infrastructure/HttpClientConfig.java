@@ -205,18 +205,18 @@ public class HttpClientConfig {
                                 totalPoolStats.getAvailable(), totalPoolStats.getLeased(), totalPoolStats.getPending(), totalPoolStats.getMax());
 
                         connectionManager
-                                .getRoutes()
-                                .stream()
-                                .forEach(route -> {
-                                    final PoolStats routeStats = connectionManager.getStats(route);
-                                    buffer
-                                            .append(" ++ HTTP Client Connection Pool Route Pool Stats ++ ")
-                                            .append(" Route : " + route.toString())
-                                            .append(" Available : " + routeStats.getAvailable())
-                                            .append(" Leased : " + routeStats.getLeased())
-                                            .append(" Pending : " + routeStats.getPending())
-                                            .append(" Max : " + routeStats.getMax());
-                                });
+                            .getRoutes()
+                            .stream()
+                            .forEach(route -> {
+                                final PoolStats routeStats = connectionManager.getStats(route);
+                                buffer
+                                        .append(" ++ HTTP Client Connection Pool Route Pool Stats ++ ")
+                                        .append(" Route : " + route.toString())
+                                        .append(" Available : " + routeStats.getAvailable())
+                                        .append(" Leased : " + routeStats.getLeased())
+                                        .append(" Pending : " + routeStats.getPending())
+                                        .append(" Max : " + routeStats.getMax());
+                            });
                         log.info(buffer.toString());
                     } else {
                         log.info("Http Client Connection manager has not been initialised");
