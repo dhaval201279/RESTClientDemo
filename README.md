@@ -5,4 +5,8 @@ and [Apache HTTP Client](https://hc.apache.org/httpcomponents-client-ga/) which 
 * Optimized in terms of connection pool management along with its externalized configurability
 * Resilient to handle errors along with configurable retries
 * Easy to monitor Connection Pool as a resource by capturing required connection pool metrics
-* Having capability to conditionally access secured REST endpoints 
+* Having capability to conditionally access secured REST endpoints
+
+## Bootstrapping downstream system a.k.a 'alias-service-api' which is invoked by [Spring Rest Template](https://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/web/client/RestTemplate.html)
+1. Go to `bin` directory of [Go](https://golang.org/)
+2. Run this command - `go run <Full Path>\alias-service-api.go`
